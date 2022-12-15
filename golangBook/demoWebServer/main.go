@@ -32,7 +32,8 @@ func webServerfetchUrl(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func webServer() {
+func main() {
 	http.HandleFunc("/", webServerfetchUrl) // each request calls handler
+	fmt.Println("Server running...\nOpen http://localhost:8000")
 	log.Fatal(http.ListenAndServe("localhost:8000", nil))
 }

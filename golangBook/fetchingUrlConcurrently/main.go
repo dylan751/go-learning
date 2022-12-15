@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func fetchingUrlConcurrently() {
+func main() {
 	start := time.Now()
 	ch := make(chan string)
 	for _, url := range os.Args[1:] {
