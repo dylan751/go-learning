@@ -104,9 +104,9 @@ func main() {
 	e := echo.New()
 	e.GET("/", hello)
 	e.GET("/cats/:dataType", getCats)
-	e.POST("/cats", addCat)         // First method
-	e.POST("/dogs", addDog)         // Second method
-	e.POST("/hamsters", addHamster) // Third method
+	e.POST("/cats", addCat)         // First method: json.Unmarshal - Fastest
+	e.POST("/dogs", addDog)         // Second method: json.Decoder - Second fastest: preferred
+	e.POST("/hamsters", addHamster) // Third method: c.Bind - slowest + relies on third party
 
 	e.Start(":4000")
 }
