@@ -116,6 +116,14 @@ func main() {
 	g.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: `[${time_rfc3339}] ${status} ${method} ${host}${path} ${latency_human}` + "\n",
 	}))
+	// Basic Auth Middleware
+	g.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+		// check in the DB
+		if username == "Zuong" && password == "123" {
+			return true, nil
+		}
+		return false, nil
+	}))
 
 	g.GET("/main", mainAdmin)
 
