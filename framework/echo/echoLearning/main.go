@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-
-	// "time"
+	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -109,6 +109,30 @@ func mainCookie(c echo.Context) error {
 	return c.String(http.StatusOK, "You are on the secret cookie main page")
 }
 
+func login(c echo.Context) error {
+	username := c.QueryParam("username")
+	password := c.QueryParam("password")
+
+	// TODO: Check username and password against DB after hasing the password
+	if username == "Zuong" && password == "123" {
+		cookie := &http.Cookie{}
+
+		// This is the same
+		// cookie := new(http.Cookie)
+
+		cookie.Name = "sessionID"
+		cookie.Value = "some_string"
+		// Cookie expires after 48 hours
+		cookie.Expires = time.Now().Add(48 * time.Hour)
+
+		c.SetCookie(cookie)
+
+		return c.String(http.StatusOK, "You were logged in!")
+	}
+
+	return c.String(http.StatusUnauthorized, "Your username or password were wrong")
+}
+
 // -------------------------------- MIDDLEWARES --------------------------------
 // Add to any response from the server and the server name
 func ServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
@@ -116,6 +140,26 @@ func ServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Response().Header().Set(echo.HeaderServer, "BlueBot/1.0")
 		c.Response().Header().Set("NotReallyHeader", "thisHaveNoMeaning")
 		return next(c)
+	}
+}
+
+func checkCookie(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		cookie, err := c.Cookie("sessionID")
+
+		if err != nil {
+			if strings.Contains(err.Error(), "named cookie not present") {
+				return c.String(http.StatusUnauthorized, "You don't have the right cookie")
+			}
+			log.Print(err)
+			return err
+		}
+
+		if cookie.Value == "some_string" {
+			return next(c)
+		}
+
+		return c.String(http.StatusUnauthorized, "You don't have the right cookie")
 	}
 }
 
@@ -144,11 +188,13 @@ func main() {
 		return false, nil
 	}))
 
+	cookieGroup.Use(checkCookie)
+
 	cookieGroup.GET("/main", mainCookie)
 
 	adminGroup.GET("/main", mainAdmin)
 
-	// e.GET("/login", login)
+	e.GET("/login", login)
 
 	// -------------------------------- CRUD --------------------------------
 	e.GET("/", hello)
