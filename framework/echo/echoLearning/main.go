@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 
+	// "time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -103,21 +105,38 @@ func mainAdmin(c echo.Context) error {
 	return c.String(http.StatusOK, "You are on the secret admin main page")
 }
 
+func mainCookie(c echo.Context) error {
+	return c.String(http.StatusOK, "You are on the secret cookie main page")
+}
+
+// -------------------------------- MIDDLEWARES --------------------------------
+// Add to any response from the server and the server name
+func ServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderServer, "BlueBot/1.0")
+		c.Response().Header().Set("NotReallyHeader", "thisHaveNoMeaning")
+		return next(c)
+	}
+}
+
 func main() {
 	fmt.Println("Welcome to my server")
 
 	e := echo.New()
 
+	e.Use(ServerHeader)
+
 	// -------------------------------- GROUP --------------------------------
-	g := e.Group("/admin")
+	adminGroup := e.Group("/admin")
+	cookieGroup := e.Group("/cookie")
 
 	// -------------------------------- MIDDLEWARES --------------------------------
 	// This logs the server interaction
-	g.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+	adminGroup.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: `[${time_rfc3339}] ${status} ${method} ${host}${path} ${latency_human}` + "\n",
 	}))
 	// Basic Auth Middleware
-	g.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+	adminGroup.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
 		// check in the DB
 		if username == "Zuong" && password == "123" {
 			return true, nil
@@ -125,7 +144,11 @@ func main() {
 		return false, nil
 	}))
 
-	g.GET("/main", mainAdmin)
+	cookieGroup.GET("/main", mainCookie)
+
+	adminGroup.GET("/main", mainAdmin)
+
+	// e.GET("/login", login)
 
 	// -------------------------------- CRUD --------------------------------
 	e.GET("/", hello)
